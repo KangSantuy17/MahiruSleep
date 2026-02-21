@@ -1,0 +1,26 @@
+#!/system/bin/sh
+log="log.txt"
+echo "started logging!" > "$log"
+
+while true; do
+  echo "$(date)" >> "$log"
+  echo "Screen is $(dumpsys display | grep "mScreenState" | grep -oE "(ON|OFF)" | head -n 1)" >> "$log"
+  echo "CPUs online : $(cat "/sys/devices/system/cpu/online")" >> "$log"
+  echo "CPUs offline: $(cat "/sys/devices/system/cpu/offline")" >> "$log"
+  echo "" >> "$log"
+  echo "Policy0 gov : $(cat "/sys/devices/system/cpu/cpufreq/policy0/scaling_governor")" >> "$log"
+  echo "Policy0 maxF: $(cat "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq")" >> "$log"
+  echo "---" >> "$log"
+  echo "Policy6 gov : $(cat "/sys/devices/system/cpu/cpufreq/policy6/scaling_governor")" >> "$log"
+  echo "Policy6 maxF: $(cat "/sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq")" >> "$log"
+  echo "" >> "$log"
+  if [ -f "/data/local/tmp/mahiru/sleep/sleeping" ]; then
+    echo "Status      : is sleeping!" >> "$log"
+  else
+    echo "Status      : is not sleeping!" >> "$log"
+  fi
+  echo "" >> "$log"
+  sleep 1
+done
+
+cat "$log"
