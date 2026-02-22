@@ -14,6 +14,8 @@ if [ ! -f "$module/setup" ]; then
     done
   fi
 
+  rm "$module/woah.txt"
+
   # mark it complete
   touch "$module/setup"
 fi
