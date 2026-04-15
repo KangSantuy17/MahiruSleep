@@ -1,0 +1,3 @@
+#!/system/bin/sh
+log="/data/local/tmp/mahiru/log.txt"
+[ -f $log ] && cat "$log"
