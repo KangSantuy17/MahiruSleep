@@ -1,0 +1,96 @@
+#!/bin/bash
+
+shopt -s nocasematch
+list=/data/local/tmp/list.txt
+
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 3)
+BLUE=$(tput setaf 4)
+MAGENTA=$(tput setaf 5)
+CYAN=$(tput setaf 6)
+BOLD=$(tput bold)
+NC=$(tput sgr0)
+
+trap "tput sgr0; exit" SIGINT SIGTERM
+
+[ -f $list ] || touch $list
+
+while true; do
+  mapfile -t packages < <(pm list package | cut -d':' -f2)
+  read -p "${CYAN}package manager: ${NC}" input
+  case $input in
+    'list' | 'ls')
+      printf "%s\n" "${packages[@]}"
+      ;;
+    list\ * | ls\ *  | search\ * | s\ *)
+      for i in ${packages[@]}; do
+        [[ "$i" == *"${input#* }"* ]] && echo "$i"
+      done
+      ;;
+    'exit' | 'e')
+      break
+      ;;
+    conf\ *)
+      input="${input#conf }"
+      case "$input" in
+        add\ *)
+          input="${input#add }"
+          if [[ " ${packages[*]} " == *" $input "* ]]; then
+            if gr<BS>p -q "^$input$" $list; then
+              echo "${NC}$input ${GREEN}is already in ${YELLOW}$list${NC}"
+            else
+              echo "$input" >> $list
+              echo "${GREEN}Added ${NC}$input${GREEN} into ${YELLOW}$list${NC}"
+            fi
+          else
+            echo "${NC}$input ${RED}does not even exist in your system.${NC}"
+          fi
+          ;;
+        'all' | '-a')
+          echo "${NC}Path: ${YELLOW}$list${NC}"
+          cat $list
+          ;;
+        del\ * | \-d\ *)
+          input="${input#* }"
+          grep -qi "^$input$" $list && sed -i "/^$input$/Id" $list && echo "${RED}Removed ${NC}$input${RED} from the list.${NC}" || echo -e "${RED}Package '${NC}$input${RED}' was not found in ${YELLOW}$list${RED}, failed to remove.${NC}"
+          ;;
+        'reset' | '-r')
+          [ -f "$list" ] && read -p "${RED}Reset your list at ${YELLOW}$list? ${RED}y${NC}/${GREEN}N" choice && [ "$choice" = 'y' ] && rm "$list" && echo -e "${GREEN}Successfully removed ${YELLOW}$list${NC}" || echo -e "${RED}Failed to remove ${NC}$list"
+          ;;
+        *)
+          echo "${NC}$input ${RED}unrecognized.${NC}"
+        esac
+      ;;
+    del\ *)
+      input="${input#del }"
+      if [[ " ${packages[*]} " == *" $input "* ]]; then
+        echo "${NC}$input ${RED}exist, are you sure to remove it?${NC}"
+        read -p 'y/N ' choice; if [ "$choice" = 'y' ]; then
+          echo "${RED}Attempting to remove ${NC}$input ${RED}for user 0!${NC}"
+          pm uninstall --user 0 "$input"
+          if pm list package | grep -q "$input"; then
+            echo "${NC}$input ${RED}still found in your system, uninstallation may have failed!${NC}"
+          else
+            echo "${NC}$input ${RED}was not found in your system, uninstallation might have succeeded.${NC}"
+          fi
+        else
+          echo "${GREEN}Keeping ${NC}$input${GREEN}, cancelled the removal.${NC}"
+        fi
+      else
+        echo "${NC}$input ${RED}does not exist in your system.${NC}"
+      fi
+      ;;
+    'help' | 'h')
+      echo -e "Availabel option:                                                                ${NC}"
+      echo -e "list | ls                 list all packages       ${YELLOW}usage: <command>      ${NC}"
+      echo -e "list | ls | search | s    search for packages     ${YELLOW}usage: <command> <key>${NC}"
+      echo -e "exit | e                  exit                    ${YELLOW}usage: <command>      ${NC}"
+      echo -e "conf  add -all -a del -d  write or read to list   ${YELLOW}usage: <command> <key>${NC}"
+      echo -e "del                       del pgk from system     ${YELLOW}usage: <command> <key>${NC}"
+      ;;
+    *)
+      echo 'What are you trying to do?'
+      ;;
+  esac
+done

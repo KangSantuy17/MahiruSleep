@@ -1,7 +1,10 @@
 #!/system/bin/sh
-log="log.txt"
+log="/data/local/tmp/mahiru/log.txt"
+STATE="$module/tmp"
 echo "started logging!" > "$log"
 
+echo -n 'Logging.'; sleep 0.5; echo -n '.'; sleep 0.5; echo -n '.'; sleep 0.5
+echo 'you can turn off your phone for a few seconds and do catlog to get the log.'
 while true; do
   echo "$(date)" >> "$log"
   echo "Screen is $(dumpsys display | grep "mScreenState" | grep -oE "(ON|OFF)" | head -n 1)" >> "$log"
@@ -14,7 +17,7 @@ while true; do
   echo "Policy6 gov : $(cat "/sys/devices/system/cpu/cpufreq/policy6/scaling_governor")" >> "$log"
   echo "Policy6 maxF: $(cat "/sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq")" >> "$log"
   echo "" >> "$log"
-  if [ -f "/data/local/tmp/mahiru/sleep/sleeping" ]; then
+  if [ -f "$STATE/sleeping" ]; then
     echo "Status      : is sleeping!" >> "$log"
   else
     echo "Status      : is not sleeping!" >> "$log"
@@ -22,5 +25,3 @@ while true; do
   echo "" >> "$log"
   sleep 1
 done
-
-cat "$log"
